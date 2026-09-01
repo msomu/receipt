@@ -13,17 +13,6 @@ Inspired by [pstack](https://github.com/cursor/plugins/tree/main/pstack) (Lauren
    Or copy the repo into `~/.cursor/plugins/local/receipt` and reload the window.
 3. You should see `/receipt`, `/create-receipt`, `/maintain-receipt`.
 
-## Talk script (10 minutes)
-
-Kotlin Connect slot is 50 minutes. This is the 15-minute live proof, timed to 10 if questions run long.
-
-1. **0:00 — the line.** Open this README. Read the first sentence out loud.
-2. **1:00 — the sample.** `cd sample && ./verify doctor` — JSON, not a paragraph.
-3. **3:00 — tests.** `./verify test` — `:app:testDebugUnitTest`, XML + log under `.receipt/proof/`.
-4. **5:00 — the device.** `./verify assemble && ./verify screenshot --install --launch` for a cold start, then increment, then `./verify screenshot` (capture-only). Proof still there after the lease drops.
-5. **8:00 — port it.** `/create-receipt` on any Android or KMP repo. It writes `.cursor/skills/verify-<app>/` with a CLI and a Feature Map. Tomorrow's homework is `/maintain-receipt`.
-6. **10:00 — stop.** Clone it, run `verify`, watch the agent prove the change. Questions.
-
 ## Sample
 
 Compose Android app, three tabs (Counter, Settings, About). AGP 9. JVM unit tests stand in for a shared module — AGP 9 does not host KMP in this sample. The `kmp-test` playbook is for repos that do.
