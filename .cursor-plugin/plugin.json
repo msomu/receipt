@@ -1,0 +1,28 @@
+{
+  "name": "receipt",
+  "displayName": "receipt",
+  "version": "0.1.0",
+  "description": "An agent does not get to say done until it leaves a receipt: Gradle output, a device screenshot, logcat. Verification-first skills for Android and KMP.",
+  "author": {
+    "name": "Somasundaram Mahesh",
+    "email": "hi@msomu.com"
+  },
+  "homepage": "https://github.com/msomu/receipt",
+  "repository": "https://github.com/msomu/receipt",
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "kotlin",
+    "kmp",
+    "verification",
+    "gradle",
+    "adb"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "android",
+    "kotlin",
+    "verification"
+  ],
+  "skills": "./skills/"
+}
