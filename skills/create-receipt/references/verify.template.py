@@ -262,7 +262,7 @@ def cmd_screenshot(args: argparse.Namespace, dry: bool) -> None:
     rel = release(serial, leased, dry)
     if rel:
         steps.append(rel)
-    ok = dry or png.exists()
+    ok = dry or (png.exists() and png.stat().st_size > 1000)
     emit(
         {
             "ok": ok,
