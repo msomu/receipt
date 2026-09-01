@@ -142,6 +142,19 @@ def adb(serial: str, *args: str) -> list[str]:
     return [exe, "-s", serial, *args]
 
 
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
+def is_png(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    return path.read_bytes()[:8] == PNG_MAGIC
+
+
+def steps_ok(steps: list[dict]) -> bool:
+    return all(s.get("exit") in (0, "dry-run") for s in steps)
+
+
 def list_serial(requested: str | None, dry: bool) -> tuple[str | None, list[dict]]:
     """Read-only device discovery. Never acquires a lease."""
     if requested:
@@ -226,52 +239,63 @@ def cmd_gradle(task_key: str, args: argparse.Namespace, dry: bool) -> None:
 
 
 def cmd_screenshot(args: argparse.Namespace, dry: bool) -> None:
+    """Capture the current screen. Does not reinstall or relaunch unless asked."""
     run_id = utc_id()
     dest = proof_dir(run_id)
+    png = dest / "screen.png"
     serial, leased, steps = resolve_device(args.device, dry)
     if not serial:
         emit({"ok": False, "command": "screenshot", "error": "no device", "steps": steps}, 1)
-    apk = REPO / CONFIG["apk"]
-    steps.append(run(adb(serial, "install", "-r", str(apk)), dry=dry))
-    steps.append(
-        run(
-            adb(
-                serial,
-                "shell",
-                "am",
-                "start",
-                "-n",
-                f"{CONFIG['application_id']}/{CONFIG['activity']}",
-            ),
-            dry=dry,
-        )
-    )
-    png = dest / "screen.png"
-    cap = adb(serial, "exec-out", "screencap", "-p")
-    if dry:
-        steps.append({"cmd": cap, "exit": "dry-run", "stdout": "", "stderr": ""})
-    else:
-        time.sleep(2)
-        raw = subprocess.run(cap, capture_output=True)
-        png.write_bytes(raw.stdout)
-        steps.append(
-            {
-                "cmd": cap,
-                "exit": raw.returncode,
-                "stdout": f"wrote {png} ({len(raw.stdout)} bytes)",
-                "stderr": "",
-            }
-        )
-    rel = release(serial, leased, dry)
-    if rel:
-        steps.append(rel)
-    ok = dry or (png.exists() and png.stat().st_size > 1000)
+    try:
+        if args.install:
+            apk = REPO / CONFIG["apk"]
+            if not dry and not apk.is_file():
+                steps.append({"cmd": ["install", str(apk)], "exit": 1, "stderr": "apk missing"})
+            else:
+                steps.append(run(adb(serial, "install", "-r", str(apk)), dry=dry))
+        if args.launch:
+            steps.append(
+                run(
+                    adb(
+                        serial,
+                        "shell",
+                        "am",
+                        "start",
+                        "-n",
+                        f"{CONFIG['application_id']}/{CONFIG['activity']}",
+                    ),
+                    dry=dry,
+                )
+            )
+            if not dry:
+                time.sleep(2)
+        cap = adb(serial, "exec-out", "screencap", "-p")
+        if dry:
+            steps.append({"cmd": cap, "exit": "dry-run", "stdout": "", "stderr": ""})
+        else:
+            raw = subprocess.run(cap, capture_output=True)
+            png.write_bytes(raw.stdout)
+            steps.append(
+                {
+                    "cmd": cap,
+                    "exit": raw.returncode,
+                    "stdout": f"wrote {png} ({len(raw.stdout)} bytes) png={is_png(png)}",
+                    "stderr": "",
+                }
+            )
+    finally:
+        rel = release(serial, leased, dry)
+        if rel:
+            steps.append(rel)
+    ok = dry or (steps_ok(steps) and is_png(png))
     emit(
         {
             "ok": ok,
             "command": "screenshot",
             "dry_run": dry,
             "device": serial,
+            "install": bool(args.install),
+            "launch": bool(args.launch),
             "proof": str(dest),
             "steps": steps,
         },
@@ -285,23 +309,43 @@ def cmd_logcat(args: argparse.Namespace, dry: bool) -> None:
     serial, leased, steps = resolve_device(args.device, dry)
     if not serial:
         emit({"ok": False, "command": "logcat", "error": "no device", "steps": steps}, 1)
-    step = run(adb(serial, "logcat", "-d", "-t", str(args.lines)), dry=dry)
-    steps.append(step)
-    log = dest / "logcat.txt"
-    if not dry:
-        log.write_text(step.get("stdout") or "")
-    rel = release(serial, leased, dry)
-    if rel:
-        steps.append(rel)
+    pkg = CONFIG["application_id"]
+    try:
+        pid_step = run(adb(serial, "shell", "pidof", "-s", pkg), dry=dry)
+        steps.append(pid_step)
+        raw_pid = (pid_step.get("stdout") or "").strip().split()
+        pid = "<pid>" if dry else (raw_pid[0] if raw_pid else "")
+        if dry:
+            steps.append(
+                {
+                    "cmd": adb(serial, "logcat", "-d", "-t", str(args.lines), "--pid", "<pid>"),
+                    "exit": "dry-run",
+                    "stdout": "",
+                    "stderr": "",
+                }
+            )
+        elif pid_step.get("exit") != 0 or not pid:
+            steps.append({"cmd": ["pidof", pkg], "exit": 1, "stderr": f"{pkg} not running"})
+        else:
+            step = run(adb(serial, "logcat", "-d", "-t", str(args.lines), "--pid", pid), dry=False)
+            steps.append(step)
+            (dest / "logcat.txt").write_text(step.get("stdout") or "")
+    finally:
+        rel = release(serial, leased, dry)
+        if rel:
+            steps.append(rel)
+    ok = dry or steps_ok(steps)
     emit(
         {
-            "ok": True,
+            "ok": ok,
             "command": "logcat",
             "dry_run": dry,
             "device": serial,
+            "package": pkg,
             "proof": str(dest),
             "steps": steps,
-        }
+        },
+        0 if ok else 1,
     )
 
 
@@ -316,7 +360,9 @@ def main() -> None:
     sub.add_parser("doctor")
     sub.add_parser("test")
     sub.add_parser("assemble")
-    sub.add_parser("screenshot")
+    ss = sub.add_parser("screenshot")
+    ss.add_argument("--install", action="store_true", help="Install the debug APK before capture. Off by default.")
+    ss.add_argument("--launch", action="store_true", help="Start the activity before capture. Off by default.")
     lg = sub.add_parser("logcat")
     lg.add_argument("--lines", type=int, default=200)
     args = p.parse_args()

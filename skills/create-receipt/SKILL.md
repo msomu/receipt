@@ -30,6 +30,8 @@ verify --dry-run <cmd>
 verify doctor | test | assemble | screenshot | logcat
 ```
 
+`screenshot` is capture-only. `--install` and `--launch` are opt-in. `ok` requires every step exit 0 and PNG magic. `logcat` follows adb exit and filters to the package pid.
+
 Stdout is one JSON object. `--dry-run` lists the commands and writes nothing. Proof files go under `.receipt/proof/<run-id>/` and are never deleted by cleanup.
 
 ## 3. Write the skill

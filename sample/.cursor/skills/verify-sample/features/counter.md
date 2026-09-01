@@ -23,12 +23,12 @@ Preconditions: app in foreground, Counter tab selected, value `0`.
 - **Decrement.** Tap `Decrement`. Value reads `0`.
 - **Floor.** Tap `Decrement` again. Value stays `0`.
 - **Reset.** Increment twice, tap `Reset`. Value reads `0`.
-- **Proof.** `./verify screenshot` then `./verify logcat`. `screen.png` shows the value you left.
+- **Proof.** `./verify screenshot` (capture-only) then `./verify logcat`. `screen.png` shows the value you left. Do not pass `--launch` here — that resets the counter to 0.
 
 JVM receipt for the same rules: `./verify test` copies `:app:testDebugUnitTest` (`CounterTest`).
 
 ## What usually lies
 
-- A screenshot of `0` after increment is the launch screen, not a drive. Capture after the tap.
+- A screenshot of `0` after increment is the launch screen, not a drive. Capture after the tap. `verify screenshot --launch` produces that lie on purpose.
 - Decrement on `0` looking unchanged is success. Do not treat it as a missed tap without a dump.
 - Instrumented `HomeScreenTest` is not a substitute for a device screenshot in a talk demo.

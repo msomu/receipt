@@ -4,8 +4,8 @@ The Settings tab toggles dark mode for the whole app.
 
 ## What it does
 
-- `settings-label` reads `Dark mode off` or `Dark mode on`.
-- `settings-switch` flips the theme.
+- `dark-mode-label` reads `Dark mode off` or `Dark mode on`.
+- `dark-mode` flips the theme.
 
 ## How a user opens it
 

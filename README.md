@@ -20,7 +20,7 @@ Kotlin Connect slot is 50 minutes. This is the 15-minute live proof, timed to 10
 1. **0:00 — the line.** Open this README. Read the first sentence out loud.
 2. **1:00 — the sample.** `cd sample && ./verify doctor` — JSON, not a paragraph.
 3. **3:00 — tests.** `./verify test` — `:app:testDebugUnitTest`, XML + log under `.receipt/proof/`.
-4. **5:00 — the device.** `./verify assemble && ./verify screenshot` — APK, pinned `adb -s`, screenshot still there after the lease drops.
+4. **5:00 — the device.** `./verify assemble && ./verify screenshot --install --launch` for a cold start, then increment, then `./verify screenshot` (capture-only). Proof still there after the lease drops.
 5. **8:00 — port it.** `/create-receipt` on any Android or KMP repo. It writes `.cursor/skills/verify-<app>/` with a CLI and a Feature Map. Tomorrow's homework is `/maintain-receipt`.
 6. **10:00 — stop.** Clone it, run `verify`, watch the agent prove the change. Questions.
 
@@ -35,8 +35,9 @@ cd sample
 ./verify doctor
 ./verify test
 ./verify assemble
-./verify screenshot   # needs an emulator or a leased device
-./verify logcat
+./verify screenshot --install --launch   # cold start
+./verify screenshot                      # current frame only
+./verify logcat                          # filtered to the app pid
 ```
 
 If `adbharbor` is on `PATH`, `screenshot` and `logcat` take a lease and never `--force`. Proof files live in `sample/.receipt/proof/` and survive cleanup.

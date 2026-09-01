@@ -12,10 +12,11 @@ Talk demo app for [receipt](https://github.com/msomu/receipt). Three tabs: Count
 ```
 cd sample
 ./gradlew :app:assembleDebug
-./verify screenshot
+./verify screenshot --install --launch   # cold start only
+./verify screenshot                      # capture whatever is on screen now
 ```
 
-Ready = the activity `com.example.receiptsample.MainActivity` is in the foreground and `counter-value` reads `0`. Teardown = `adbharbor release -s <serial>` if this run acquired a lease. Never `--force`.
+Ready = the activity `com.example.receiptsample.MainActivity` is in the foreground and `counter-value` reads `0`. Default `screenshot` does not reinstall or relaunch. Teardown = `adbharbor release -s <serial>` if this run acquired a lease. Never `--force`.
 
 ## Doctor
 
@@ -52,7 +53,10 @@ Release a lease this CLI acquired. Leave proof files. Do not uninstall the app u
 ./verify test
 ./verify assemble
 ./verify screenshot
+./verify screenshot --install --launch
 ./verify logcat --lines 200
 ```
+
+`screenshot` captures the current frame. `--install` / `--launch` are opt-in. `ok` is true only when every step exits 0 and `screen.png` starts with PNG magic. `logcat` filters to the app pid; it is not ok if the package is not running.
 
 Pin a serial with `./verify --device emulator-5554 screenshot` or `ANDROID_SERIAL`.
