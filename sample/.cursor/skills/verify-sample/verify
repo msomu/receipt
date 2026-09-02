@@ -174,6 +174,12 @@ def submit_cmd() -> list[str]:
     ]
 
 
+def valid_run_id(rid: str) -> bool:
+    if not rid or len(rid) > 64 or "/" in rid or ".." in rid:
+        return False
+    return all(c.isalnum() or c in "-_" for c in rid)
+
+
 def parse_run_id(stdout: str) -> str | None:
     text = (stdout or "").strip()
     if not text:
@@ -182,12 +188,15 @@ def parse_run_id(stdout: str) -> str | None:
         data = json.loads(text)
         if isinstance(data, dict):
             rid = data.get("run_id") or data.get("id")
-            if rid:
+            if rid and valid_run_id(str(rid)):
                 return str(rid)
     except json.JSONDecodeError:
         pass
-    line = text.splitlines()[-1].strip()
-    return line or None
+    for line in text.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[0] == "run" and valid_run_id(parts[1]):
+            return parts[1]
+    return None
 
 
 def take_run_proof(run_id: str, dest: Path) -> dict:
@@ -225,6 +234,7 @@ def cmd_harbor_run(command: str, dest: Path, dry: bool, extra: dict | None = Non
             },
             1,
         )
+    # adbharbor submit is blocking (executeRun, then print).
     step = run(submit_cmd(), dry=dry)
     steps.append(step)
     copied = {"run": None, "png": None, "logcat": None}
