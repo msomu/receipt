@@ -8,10 +8,11 @@ Inspired by [pstack](https://github.com/cursor/plugins/tree/main/pstack) (Lauren
 
 ## Install
 
-1. Clone this repo.
-2. Cursor → **Settings → Plugins → Add from GitHub** → `msomu/receipt`.
-   Or copy the repo into `~/.cursor/plugins/local/receipt` and reload the window.
-3. You should see `/receipt`, `/create-receipt`, `/maintain-receipt`.
+Cursor → **Settings → Plugins → Add from GitHub** → `msomu/receipt`.
+
+You should see `/receipt`, `/create-receipt`, `/maintain-receipt`.
+
+Local folder add also works if the clone has `.cursor-plugin/marketplace.json`. Or copy the repo into `~/.cursor/plugins/local/receipt` and reload.
 
 ## Sample
 

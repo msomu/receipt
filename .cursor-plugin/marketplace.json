@@ -1,0 +1,13 @@
+{
+  "name": "receipt",
+  "owner": {
+    "name": "Somasundaram Mahesh"
+  },
+  "plugins": [
+    {
+      "name": "receipt",
+      "source": "./",
+      "description": "An agent does not get to say done until it leaves a receipt: Gradle output, a device screenshot, logcat."
+    }
+  ]
+}
