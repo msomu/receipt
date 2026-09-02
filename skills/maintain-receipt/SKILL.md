@@ -25,7 +25,7 @@ Edit only the verify skill directory (`SKILL.md`, `verify`, `features/`). Never 
 1. **Find it.** `.cursor/skills/verify-*/`. Several → ask which. None → `/create-receipt`.
 2. **Index.** README entries match sibling files. Drop dead links.
 3. **Source.** For each feature file, read the current UI and Gradle. Cite the path that drifted.
-4. **CLI.** `--help` still lists `doctor test assemble screenshot logcat`. Dry-run the assemble and test tasks and confirm the names exist in the wrapper (`./gradlew tasks`).
+4. **CLI.** `--help` still lists `doctor test assemble screenshot logcat`. Dry-run the assemble and test tasks and confirm the names exist in the wrapper (`./gradlew tasks`). No-device + `adbharbor` on PATH still calls `adbharbor submit`. Do not add a baked-in harbor URL.
 5. **Live.** `doctor`, then drive every feature once. Doctor after any failed drive. Release leases you acquired. Confirm `.receipt/proof/` still has the files after teardown.
 6. **Triage.** Wrong user path → fix the map. Harness cannot drive a working path → fix `verify`. App is broken → report, do not paper it over.
 

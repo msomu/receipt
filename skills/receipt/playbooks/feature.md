@@ -16,7 +16,7 @@ Implement against the map. Prefer test tags and `contentDescription` over coordi
 2. `verify test` — full module task, not a single class.
 3. `verify assemble`
 4. Drive every entry point the new feature file lists. One happy path is not enough if the file lists cancel / empty / error.
-5. `verify screenshot` and `verify logcat` after the drive.
+5. `verify screenshot` and `verify logcat` after the drive. No device + harbor MCP → `get_proof` instead.
 
 ## Stop
 
