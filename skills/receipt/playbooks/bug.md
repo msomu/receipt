@@ -6,7 +6,7 @@ Reproduce on the real surface, then fix, then leave a receipt that shows the bef
 
 1. Read the project-local `verify-<app>` skill. Run its `doctor`.
 2. Drive the failing path from the feature map, not from a guess.
-3. Capture a receipt of the failure: screenshot and/or logcat, plus the command JSON. If doctor cannot start the app, that is the bug.
+3. Capture a receipt of the failure: screenshot and/or logcat, plus the command JSON. If doctor cannot start the app, that is the bug. No device + harbor MCP → `wait_for_run` + `get_proof`.
 4. Do not start editing until the failure is on disk.
 
 ## 2. Fix

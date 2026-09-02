@@ -29,7 +29,22 @@ cd sample
 ./verify logcat                          # filtered to the app pid
 ```
 
-If `adbharbor` is on `PATH`, `screenshot` and `logcat` take a lease and never `--force`. Proof files live in `sample/.receipt/proof/` and survive cleanup.
+If `adbharbor` is on `PATH`, `screenshot` and `logcat` take a lease and never `--force`. No device + `adbharbor` on `PATH` → `adbharbor submit` (harbor picks the serial). Proof files live in `sample/.receipt/proof/` and survive cleanup.
+
+## Local vs cloud
+
+**Local Cursor** — phone on this Mac. Shell only. No MCP.
+
+```
+adbharbor acquire --any
+./verify screenshot
+```
+
+Harbor still owns `:5037`. Do not talk to the phone around it.
+
+**Cloud** — the VM has no USB. On the desk Mac: `adbharbor expose --via cloudflare` (or `ngrok` / `tailscale`). Paste **your** public URL + bearer token into Cursor Dashboard. This plugin ships neither a URL nor an MCP server.
+
+No device + harbor MCP connected → submit the APK, then `wait_for_run` + `get_proof`. That PNG is the receipt. No fake screenshots.
 
 ## Use it on another repo
 

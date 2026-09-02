@@ -151,6 +151,109 @@ def is_png(path: Path) -> bool:
     return path.read_bytes()[:8] == PNG_MAGIC
 
 
+def use_harbor_submit(serial: str | None, harbor: str | None) -> bool:
+    return serial is None and bool(harbor)
+
+
+def harbor_dir() -> Path:
+    raw = os.environ.get("ADBHARBOR_DIR")
+    return Path(raw) if raw else Path.home() / ".adbharbor"
+
+
+def submit_cmd() -> list[str]:
+    harbor = which("adbharbor") or "adbharbor"
+    return [
+        harbor,
+        "submit",
+        "--apk",
+        str(REPO / CONFIG["apk"]),
+        "--package",
+        CONFIG["application_id"],
+        "--activity",
+        CONFIG["activity"],
+    ]
+
+
+def parse_run_id(stdout: str) -> str | None:
+    text = (stdout or "").strip()
+    if not text:
+        return None
+    try:
+        data = json.loads(text)
+        if isinstance(data, dict):
+            rid = data.get("run_id") or data.get("id")
+            if rid:
+                return str(rid)
+    except json.JSONDecodeError:
+        pass
+    line = text.splitlines()[-1].strip()
+    return line or None
+
+
+def take_run_proof(run_id: str, dest: Path) -> dict:
+    src = harbor_dir() / "runs" / run_id
+    copied: dict = {"run": str(src), "png": None, "logcat": None}
+    if not src.is_dir():
+        return copied
+    png = next((src / n for n in ("screen.png", "screenshot.png") if (src / n).is_file()), None)
+    if png is None:
+        pngs = sorted(src.glob("*.png"))
+        png = pngs[0] if pngs else None
+    if png is not None:
+        dest_png = dest / "screen.png"
+        shutil.copy2(png, dest_png)
+        copied["png"] = str(dest_png)
+    log = src / "logcat.txt"
+    if log.is_file():
+        dest_log = dest / "logcat.txt"
+        shutil.copy2(log, dest_log)
+        copied["logcat"] = str(dest_log)
+    return copied
+
+
+def cmd_harbor_run(command: str, dest: Path, dry: bool, extra: dict | None = None) -> None:
+    apk = REPO / CONFIG["apk"]
+    steps: list[dict] = []
+    if not dry and not apk.is_file():
+        emit(
+            {
+                "ok": False,
+                "command": command,
+                "error": "apk missing; run assemble first",
+                "via": "harbor-submit",
+                "steps": [{"cmd": ["assemble", str(apk)], "exit": 1, "stderr": "apk missing"}],
+            },
+            1,
+        )
+    step = run(submit_cmd(), dry=dry)
+    steps.append(step)
+    copied = {"run": None, "png": None, "logcat": None}
+    if not dry and step.get("exit") == 0:
+        rid = parse_run_id(step.get("stdout") or "")
+        if rid:
+            copied = take_run_proof(rid, dest)
+            steps.append({"cmd": ["copy-proof", rid], "exit": 0, "stdout": json.dumps(copied)})
+        else:
+            steps.append({"cmd": ["copy-proof"], "exit": 1, "stderr": "no run id from adbharbor submit"})
+    png = dest / "screen.png"
+    if command == "logcat":
+        ok = dry or (steps_ok(steps) and bool(copied.get("logcat")))
+    else:
+        ok = dry or (steps_ok(steps) and is_png(png))
+    payload = {
+        "ok": ok,
+        "command": command,
+        "dry_run": dry,
+        "via": "harbor-submit",
+        "device": None,
+        "proof": str(dest),
+        "steps": steps,
+    }
+    if extra:
+        payload.update(extra)
+    emit(payload, 0 if ok else 1)
+
+
 def steps_ok(steps: list[dict]) -> bool:
     return all(s.get("exit") in (0, "dry-run") for s in steps)
 
@@ -245,6 +348,13 @@ def cmd_screenshot(args: argparse.Namespace, dry: bool) -> None:
     png = dest / "screen.png"
     serial, leased, steps = resolve_device(args.device, dry)
     if not serial:
+        if use_harbor_submit(serial, which("adbharbor")):
+            cmd_harbor_run(
+                "screenshot",
+                dest,
+                dry,
+                extra={"install": True, "launch": True},
+            )
         emit({"ok": False, "command": "screenshot", "error": "no device", "steps": steps}, 1)
     try:
         if args.install:
@@ -308,6 +418,8 @@ def cmd_logcat(args: argparse.Namespace, dry: bool) -> None:
     dest = proof_dir(run_id)
     serial, leased, steps = resolve_device(args.device, dry)
     if not serial:
+        if use_harbor_submit(serial, which("adbharbor")):
+            cmd_harbor_run("logcat", dest, dry)
         emit({"ok": False, "command": "logcat", "error": "no device", "steps": steps}, 1)
     pkg = CONFIG["application_id"]
     try:

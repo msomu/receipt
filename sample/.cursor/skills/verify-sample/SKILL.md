@@ -25,7 +25,7 @@ Ready = the activity `com.example.receiptsample.MainActivity` is in the foregrou
 ./verify --dry-run doctor
 ```
 
-Healthy: `java`, `adb`, `gradlew`, and `ok: true` in the JSON. Device is optional for `test` / `assemble`. Required for `screenshot` / `logcat`.
+Healthy: `java`, `adb`, `gradlew`, and `ok: true` in the JSON. Device is optional for `test` / `assemble`. For `screenshot` / `logcat`: a local device, **or** `adbharbor submit` when harbor is on PATH and doctor has no device. Cloud with harbor MCP: `wait_for_run` + `get_proof`. This skill ships no harbor URL.
 
 ## Drive
 

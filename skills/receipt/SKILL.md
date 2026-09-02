@@ -30,9 +30,17 @@ A receipt is a directory of files the next agent can open without you:
 
 Name the directory. Leave it. Cleanup of processes and leases must not delete it.
 
+## Where the phone is
+
+- **This machine** — `./verify` / `adbharbor` CLI. Harbor owns `:5037`. No MCP.
+- **No USB + harbor MCP connected** — submit the APK (`adbharbor submit` or `POST /v1/runs`), then `wait_for_run` + `get_proof`. That PNG is the receipt.
+- This plugin ships no harbor URL and no MCP server. The user pastes *their* URL + token in Cursor Dashboard.
+
 ## Hard rules
 
 - Pin every adb call with `-s`. If `adbharbor` is on PATH, take a lease before any write (install, launch, tap, screenshot). Never `adbharbor release --force`.
+- No device + `adbharbor` on PATH → `adbharbor submit`. Harbor picks the serial. Never pass `-s`.
+- No device + harbor MCP → `wait_for_run` + `get_proof`. Do not fake a screenshot.
 - Run the full test task for the module you touched. A scoped class run is not a receipt.
 - Attribute a green run to the `git rev-parse HEAD` of the same shell.
 - If you cannot produce a receipt, you are blocked. Say what command failed and stop.
